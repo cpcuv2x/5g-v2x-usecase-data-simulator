@@ -1,4 +1,0 @@
-car_id,cam1_id,cam2_id,cam3_id,cam4_id
-car1,car1_cam1,car1_cam2,car1_cam3,car1_cam4
-car2,car2_cam1,car2_cam2,car2_cam3,car2_cam4
-car3,car3_cam1,car3_cam2,car3_cam3,car3_cam4
