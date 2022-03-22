@@ -34,7 +34,7 @@ f = open('driver.txt', 'r')
 drivers = [l.strip() for l in f.readlines()]
 f.close()
 
-def car_thread(car, location_offset, location_interval=1, passenger_interval=60, drowsiness_heartbeat=1800,
+def car_thread(car, driver, location_offset, location_interval=1, passenger_interval=60, drowsiness_heartbeat=1800,
                 accident_heartbeat=1800, cam_status_interval=60, car_status_interval=60):
     car_id, cam1_id, cam2_id, cam3_id, cam4_id = car[0], car[1], car[2], car[3], car[4]
     cur_date_time = datetime.datetime(2022, 1, 1, 9, 0)
@@ -99,14 +99,14 @@ def car_thread(car, location_offset, location_interval=1, passenger_interval=60,
                 json_producer.send(LINE_PROTOCOL_TOPIC, car_status_data)
         # simulate accident
         if random.uniform(0, 1) <= ACCIDENT_POSIBILITY:
-            accident_data = {'car_id': car_id, 'lat': cur_lat, 'lng': cur_lng, 'time': cur_unix_time, 'type': 'accident', 'driver_id': drivers[random.randint(0, 2)]}
+            accident_data = {'car_id': car_id, 'lat': cur_lat, 'lng': cur_lng, 'time': cur_unix_time, 'type': 'accident', 'driver_id': driver}
             print(accident_data)
             if KAFKA_ENABLE:
                 line_protocol_producer.send(LINE_PROTOCOL_TOPIC, accident_data)
                 json_producer.send(LINE_PROTOCOL_TOPIC, accident_data)
         # simulate drowsiness
         if random.uniform(0, 1) <= DROWSINESS_POSIBILITY:
-            drowsiness_data = {'car_id': car_id, 'lat': cur_lat, 'lng': cur_lng, 'time': cur_unix_time, 'type': 'drowsiness', 'driver_id': drivers[random.randint(0, 2)], 'response_time': random.randint(0, 20)/10}
+            drowsiness_data = {'car_id': car_id, 'lat': cur_lat, 'lng': cur_lng, 'time': cur_unix_time, 'type': 'drowsiness', 'driver_id': driver, 'response_time': random.randint(0, 20)/10}
             print(drowsiness_data)
             if KAFKA_ENABLE:
                 line_protocol_producer.send(LINE_PROTOCOL_TOPIC, drowsiness_data)
@@ -119,7 +119,7 @@ def car_thread(car, location_offset, location_interval=1, passenger_interval=60,
 
 i = 0
 for car in cars:
-    threading.Thread(target=car_thread, args=[car, int(i*5)], daemon=True).start()
+    threading.Thread(target=car_thread, args=[cars[i], drivers[i], int(i*5)], daemon=True).start()
     i += 1
 
 while True:
