@@ -3,6 +3,7 @@ import datetime
 import time
 import threading
 import sys
+import math
 
 random.seed(0)
 
@@ -16,13 +17,14 @@ if KAFKA_ENABLE:
     import json
     from kafka import KafkaProducer
     KAFKA_BROKER_URL = "localhost:9092"
-    LINE_PROTOCOL_TOPIC = "LineProtocolTopic"
-    JSON_TOPIC = "JSONTopic"
+    LINE_PROTOCOL_TOPIC = "cpcuv2x-events-for-influxdb"
+    JSON_TOPIC = "cpcuv2x-events-for-web-service"
     line_protocol_producer = KafkaProducer(bootstrap_servers=KAFKA_BROKER_URL, value_serializer=lambda m: json.dumps(m).encode('ascii'))
     json_producer = KafkaProducer(bootstrap_servers=KAFKA_BROKER_URL, value_serializer=lambda m: json.dumps(m).encode('ascii'))
 
-ACCIDENT_POSIBILITY = 1/1000000
-DROWSINESS_POSIBILITY = 1/1000
+ACCIDENT_POSSIBILITY = 1/1000000
+DROWSINESS_POSSIBILITY = 1/1000
+ECR_THRESHOLD = 0.5
 
 f = open('location/chula_route.txt', 'r')
 location = [(l.split(',')[0], l.split(',')[1]) for l in f.readlines()]
@@ -34,83 +36,73 @@ f = open('driver.txt', 'r')
 drivers = [l.strip() for l in f.readlines()]
 f.close()
 
-def car_thread(car, driver, location_offset, location_interval=1, passenger_interval=60, drowsiness_heartbeat=1800,
-                accident_heartbeat=1800, cam_status_interval=60, car_status_interval=60):
-    car_id, cam1_id, cam2_id, cam3_id, cam4_id = car[0], car[1], car[2], car[3], car[4]
+def car_thread(car, driver, location_offset, location_interval=1, passenger_interval=60, ecr_interval=30, heartbeat_interval=60):
+    car_id, cam_driver_id, cam_door_id, cam_front_id, cam_back_id = car[0], car[1], car[2], car[3], car[4]
     cur_date_time = datetime.datetime(2022, 1, 1, 9, 0)
     cur_unix_time = int(time.mktime(cur_date_time.timetuple()))
     i = location_offset
     counter = 0
+    drowsiness_counter = -1
+    response_time = 0
     while True:
         cur_lat, cur_lng = location[i][0], location[i][1]
-        # location
-        if counter%location_interval == 0:
-            location_data = {'car_id': car_id, 'lat': cur_lat, 'lng': cur_lng, 'time': cur_unix_time, 'type': 'location'}
-            print(location_data)
-            if KAFKA_ENABLE:
-                line_protocol_producer.send(LINE_PROTOCOL_TOPIC, location_data)
-                json_producer.send(LINE_PROTOCOL_TOPIC, location_data)
-        # passenger
-        if counter%passenger_interval == 0:
-            passenger_data = {'car_id': car_id, 'lat': cur_lat, 'lng': cur_lng, 'time': cur_unix_time, 'type': 'passenger', 'passenger': random.randint(0, 9)}
-            print(passenger_data)
-            if KAFKA_ENABLE:
-                line_protocol_producer.send(LINE_PROTOCOL_TOPIC, passenger_data)
-                json_producer.send(LINE_PROTOCOL_TOPIC, passenger_data)
-        # drowsiness
-        if counter%drowsiness_heartbeat == 0:
-            drowsiness_heatbeat_data = {'car_id': car_id, 'lat': cur_lat, 'lng': cur_lng, 'time': cur_unix_time, 'type': 'drowsiness_heartbeat', 'ecr': random.randint(0, 40)/10}
-            print(drowsiness_heatbeat_data)
-            if KAFKA_ENABLE:
-                line_protocol_producer.send(LINE_PROTOCOL_TOPIC, drowsiness_heatbeat_data)
-                json_producer.send(LINE_PROTOCOL_TOPIC, drowsiness_heatbeat_data)
-        # accident
-        if counter%accident_heartbeat == 0:
-            accident_heatbeat_data = {'car_id': car_id, 'lat': cur_lat, 'lng': cur_lng, 'time': cur_unix_time, 'type': 'accident_heartbeat', 'status': 'active'}
-            print(accident_heatbeat_data)
-            if KAFKA_ENABLE:
-                line_protocol_producer.send(LINE_PROTOCOL_TOPIC, accident_heatbeat_data)
-                json_producer.send(LINE_PROTOCOL_TOPIC, accident_heatbeat_data)
-        # camera status
-        if counter%cam_status_interval == 0:
-            cam1_status_data = {'car_id': car_id, 'lat': cur_lat, 'lng': cur_lng, 'time': cur_unix_time, 'type': 'camera', 'camera_id': cam1_id, 'status': 'active'}
-            cam2_status_data = {'car_id': car_id, 'lat': cur_lat, 'lng': cur_lng, 'time': cur_unix_time, 'type': 'camera', 'camera_id': cam2_id, 'status': 'active'}
-            cam3_status_data = {'car_id': car_id, 'lat': cur_lat, 'lng': cur_lng, 'time': cur_unix_time, 'type': 'camera', 'camera_id': cam3_id, 'status': 'active'}
-            cam4_status_data = {'car_id': car_id, 'lat': cur_lat, 'lng': cur_lng, 'time': cur_unix_time, 'type': 'camera', 'camera_id': cam4_id, 'status': 'active'}
-            print(cam1_status_data)
-            print(cam2_status_data)
-            print(cam3_status_data)
-            print(cam4_status_data)
-            if KAFKA_ENABLE:
-                line_protocol_producer.send(LINE_PROTOCOL_TOPIC, cam1_status_data)
-                line_protocol_producer.send(LINE_PROTOCOL_TOPIC, cam2_status_data)
-                line_protocol_producer.send(LINE_PROTOCOL_TOPIC, cam3_status_data)
-                line_protocol_producer.send(LINE_PROTOCOL_TOPIC, cam4_status_data)
-                json_producer.send(LINE_PROTOCOL_TOPIC, cam1_status_data)
-                json_producer.send(LINE_PROTOCOL_TOPIC, cam2_status_data)
-                json_producer.send(LINE_PROTOCOL_TOPIC, cam3_status_data)
-                json_producer.send(LINE_PROTOCOL_TOPIC, cam4_status_data)
-        # car status
-        if counter%car_status_interval == 0:
-            car_status_data = {'car_id': car_id, 'lat': cur_lat, 'lng': cur_lng, 'time': cur_unix_time, 'type': 'car_status', 'status': 'active'}
-            print(car_status_data)
-            if KAFKA_ENABLE:
-                line_protocol_producer.send(LINE_PROTOCOL_TOPIC, car_status_data)
-                json_producer.send(LINE_PROTOCOL_TOPIC, car_status_data)
+        random_accident_chance, random_drowsiness_chance = random.uniform(0, 1), random.uniform(0, 1)
+        random_passenger = random.randint(0, 9)
+        if random_drowsiness_chance <= DROWSINESS_POSSIBILITY:
+            random_ecr = round(random.uniform(ECR_THRESHOLD, 1), 3)
+            response_time = random.randint(0, 20)/10
+            # set counter for the sending drowsiness event after the response time has passed
+            drowsiness_counter = counter + math.ceil(response_time)
+        else:
+            random_ecr = round(random.uniform(0, ECR_THRESHOLD-0.001), 3)
         # simulate accident
-        if random.uniform(0, 1) <= ACCIDENT_POSIBILITY:
-            accident_data = {'car_id': car_id, 'lat': cur_lat, 'lng': cur_lng, 'time': cur_unix_time, 'type': 'accident', 'driver_id': driver}
+        if random_accident_chance <= ACCIDENT_POSSIBILITY:
+            accident_data = {'type':'event', 'kind': 'accident', 'car_id': car_id, 'driver_id': driver, 'lat': cur_lat, 'lng': cur_lng, 'time': cur_unix_time}
             print(accident_data)
             if KAFKA_ENABLE:
                 line_protocol_producer.send(LINE_PROTOCOL_TOPIC, accident_data)
                 json_producer.send(LINE_PROTOCOL_TOPIC, accident_data)
         # simulate drowsiness
-        if random.uniform(0, 1) <= DROWSINESS_POSIBILITY:
-            drowsiness_data = {'car_id': car_id, 'lat': cur_lat, 'lng': cur_lng, 'time': cur_unix_time, 'type': 'drowsiness', 'driver_id': driver, 'response_time': random.randint(0, 20)/10}
+        if counter == drowsiness_counter:
+            drowsiness_counter = -1
+            drowsiness_data = {'type':'event', 'kind': 'drowsiness_alarm', 'car_id': car_id, 'driver_id': driver, 'response_time': response_time, 'lat': cur_lat, 'lng': cur_lng, 'time': cur_unix_time}
             print(drowsiness_data)
             if KAFKA_ENABLE:
                 line_protocol_producer.send(LINE_PROTOCOL_TOPIC, drowsiness_data)
                 json_producer.send(LINE_PROTOCOL_TOPIC, drowsiness_data)
+        # heartbeat
+        if counter%heartbeat_interval == 0:
+            cam_driver_status_data = {'camera_id': cam_driver_id, 'status': 'active'}
+            cam_door_status_data = {'camera_id': cam_door_id, 'status': 'active'}
+            cam_front_status_data = {'camera_id': cam_front_id, 'status': 'active'}
+            cam_back_status_data = {'camera_id': cam_back_id, 'status': 'active'}
+            drowsiness_heatbeat_data = {'status': 'active'}
+            accident_heatbeat_data = {'status': 'active'}
+            device_status = {'cam_driver': cam_driver_status_data, 'cam_door': cam_door_status_data, 'cam_front': cam_front_status_data, 'cam_back': cam_back_status_data, 'drowsiness_module': drowsiness_heatbeat_data, 'accident_module': accident_heatbeat_data}
+            heartbeat_data = {'type':'heartbeat', 'kind': 'car', 'car_id': car_id, 'time': cur_unix_time, 'lat': cur_lat, 'lng': cur_lng, 'device_status': device_status}
+            print(heartbeat_data)
+            if KAFKA_ENABLE:
+                line_protocol_producer.send(JSON_TOPIC, heartbeat_data)
+        # location
+        if counter%location_interval == 0:
+            location_data = {'type':'metric', 'kind': 'car_location', 'car_id': car_id, 'lat': cur_lat, 'lng': cur_lng, 'time': cur_unix_time}
+            print(location_data)
+            if KAFKA_ENABLE:
+                json_producer.send(LINE_PROTOCOL_TOPIC, location_data)
+        # passenger
+        if counter%passenger_interval == 0:
+            passenger_data = {'type':'metric', 'kind': 'car_passenger', 'car_id': car_id, 'passenger': random_passenger, 'lat': cur_lat, 'lng': cur_lng, 'time': cur_unix_time}
+            print(passenger_data)
+            if KAFKA_ENABLE:
+                line_protocol_producer.send(LINE_PROTOCOL_TOPIC, passenger_data)
+                json_producer.send(LINE_PROTOCOL_TOPIC, passenger_data)
+        # ecr
+        if counter%ecr_interval == 0:
+            ecr_data = {'type':'metric', 'kind': 'driver_ecr','car_id': car_id, 'ecr': random_ecr, 'lat': cur_lat, 'lng': cur_lng, 'time': cur_unix_time}
+            print(ecr_data)
+            if KAFKA_ENABLE:
+                line_protocol_producer.send(LINE_PROTOCOL_TOPIC, ecr_data)
+                json_producer.send(LINE_PROTOCOL_TOPIC, ecr_data)
         i = (i+1)%len(location)
         counter += 1
         cur_date_time = cur_date_time + datetime.timedelta(seconds=1)
