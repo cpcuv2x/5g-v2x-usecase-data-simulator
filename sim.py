@@ -36,7 +36,7 @@ f = open('driver.txt', 'r')
 drivers = [l.strip() for l in f.readlines()]
 f.close()
 
-def car_thread(car, driver, location_offset, location_interval=1, passenger_interval=60, ecr_interval=30, heartbeat_interval=60):
+def car_thread(car, driver, location_offset, location_interval=1, car_information_interval=60, heartbeat_interval=60):
     car_id, cam_driver_id, cam_door_id, cam_front_id, cam_back_id = car[0], car[1], car[2], car[3], car[4]
     cur_date_time = datetime.datetime(2022, 1, 1, 9, 0)
     cur_unix_time = int(time.mktime(cur_date_time.timetuple()))
@@ -89,20 +89,13 @@ def car_thread(car, driver, location_offset, location_interval=1, passenger_inte
             print(location_data)
             if KAFKA_ENABLE:
                 json_producer.send(LINE_PROTOCOL_TOPIC, location_data)
-        # passenger
-        if counter%passenger_interval == 0:
-            passenger_data = {'type':'metric', 'kind': 'car_passenger', 'car_id': car_id, 'passenger': random_passenger, 'lat': cur_lat, 'lng': cur_lng, 'time': cur_unix_time}
-            print(passenger_data)
+        # car information
+        if counter%car_information_interval == 0:
+            car_information_data = {'type':'metric', 'kind': 'car_information', 'car_id': car_id, 'driver_id': driver, 'ecr': random_ecr, 'ecr_threshold': ECR_THRESHOLD, 'passenger': random_passenger, 'lat': cur_lat, 'lng': cur_lng, 'time': cur_unix_time}
+            print(car_information_data)
             if KAFKA_ENABLE:
-                line_protocol_producer.send(LINE_PROTOCOL_TOPIC, passenger_data)
-                json_producer.send(LINE_PROTOCOL_TOPIC, passenger_data)
-        # ecr
-        if counter%ecr_interval == 0:
-            ecr_data = {'type':'metric', 'kind': 'driver_ecr','car_id': car_id, 'ecr': random_ecr, 'ecr_threshold': ECR_THRESHOLD, 'lat': cur_lat, 'lng': cur_lng, 'time': cur_unix_time}
-            print(ecr_data)
-            if KAFKA_ENABLE:
-                line_protocol_producer.send(LINE_PROTOCOL_TOPIC, ecr_data)
-                json_producer.send(LINE_PROTOCOL_TOPIC, ecr_data)
+                line_protocol_producer.send(LINE_PROTOCOL_TOPIC, car_information_data)
+                json_producer.send(LINE_PROTOCOL_TOPIC, car_information_data)
         i = (i+1)%len(location)
         counter += 1
         cur_date_time = cur_date_time + datetime.timedelta(seconds=1)
