@@ -98,7 +98,7 @@ def car_thread(car, driver, location_offset, location_interval=1, passenger_inte
                 json_producer.send(LINE_PROTOCOL_TOPIC, passenger_data)
         # ecr
         if counter%ecr_interval == 0:
-            ecr_data = {'type':'metric', 'kind': 'driver_ecr','car_id': car_id, 'ecr': random_ecr, 'lat': cur_lat, 'lng': cur_lng, 'time': cur_unix_time}
+            ecr_data = {'type':'metric', 'kind': 'driver_ecr','car_id': car_id, 'ecr': random_ecr, 'ecr_threshold': ECR_THRESHOLD, 'lat': cur_lat, 'lng': cur_lng, 'time': cur_unix_time}
             print(ecr_data)
             if KAFKA_ENABLE:
                 line_protocol_producer.send(LINE_PROTOCOL_TOPIC, ecr_data)
