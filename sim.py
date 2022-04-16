@@ -79,7 +79,7 @@ def car_thread(car, driver, location_offset, location_interval=1, passenger_inte
             drowsiness_heatbeat_data = {'status': 'active'}
             accident_heatbeat_data = {'status': 'active'}
             device_status = {'cam_driver': cam_driver_status_data, 'cam_door': cam_door_status_data, 'cam_front': cam_front_status_data, 'cam_back': cam_back_status_data, 'drowsiness_module': drowsiness_heatbeat_data, 'accident_module': accident_heatbeat_data}
-            heartbeat_data = {'type':'heartbeat', 'kind': 'car', 'car_id': car_id, 'time': cur_unix_time, 'lat': cur_lat, 'lng': cur_lng, 'device_status': device_status}
+            heartbeat_data = {'type':'heartbeat', 'kind': 'car', 'car_id': car_id, 'driver_id': driver, 'time': cur_unix_time, 'lat': cur_lat, 'lng': cur_lng, 'device_status': device_status}
             print(heartbeat_data)
             if KAFKA_ENABLE:
                 line_protocol_producer.send(JSON_TOPIC, heartbeat_data)
