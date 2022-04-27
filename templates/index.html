@@ -1,0 +1,208 @@
+<html>
+  <head>
+    <title>CPCU-V2X | Data Simulator</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <link href="{{ url_for('static', path='/styles.css') }}" rel="stylesheet" />
+  </head>
+  <script>
+    $(document).ready(function () {
+      $("#btn-add-car").click(function () {
+        $.ajax({
+          url: "/add-car",
+          method: "POST",
+          contentType: "application/json",
+          data: JSON.stringify({
+            id: $("#inp-car-id").val(),
+          }),
+          success: null,
+          dataType: "json",
+        });
+      });
+    });
+    $(document).ajaxStop(function () {
+      location.reload();
+    });
+    function updateCar(id) {
+      const payload = {
+        id,
+        driverId: $(`#inp-driver-id_${id}`).val(),
+        camDriverId: $(`#inp-cam-driver-id_${id}`).val(),
+        camDriverActive: $(`#inp-cam-driver-active_${id}`).is(":checked"),
+        camDoorId: $(`#inp-cam-door-id_${id}`).val(),
+        camDoorActive: $(`#inp-cam-door-active_${id}`).is(":checked"),
+        camFrontId: $(`#inp-cam-front-id_${id}`).val(),
+        camFrontActive: $(`#inp-cam-front-active_${id}`).is(":checked"),
+        camBackId: $(`#inp-cam-back-id_${id}`).val(),
+        camBackActive: $(`#inp-cam-back-active_${id}`).is(":checked"),
+        accidentModuleActive: $(`#inp-accident-module-active_${id}`).is(
+          ":checked"
+        ),
+        accidentProbability: parseFloat(
+          $(`#inp-accident-probability_${id}`).val()
+        ),
+        drowsinessModuleActive: $(`#inp-drowsiness-module-active_${id}`).is(
+          ":checked"
+        ),
+        drowsinessProbability: parseFloat(
+          $(`#inp-drowsiness-probability_${id}`).val()
+        ),
+        ecrThreshold: parseFloat($(`#inp-ecr-threshold_${id}`).val()),
+      };
+      console.log(payload);
+      $.ajax({
+        url: "/update-car",
+        method: "POST",
+        contentType: "application/json",
+        data: JSON.stringify(payload),
+        success: null,
+        dataType: "json",
+      });
+    }
+    function deleteCar(id) {
+      $.ajax({
+        url: "/delete-car",
+        method: "POST",
+        contentType: "application/json",
+        data: JSON.stringify({
+          id,
+        }),
+        success: null,
+        dataType: "json",
+      });
+    }
+    function startCar(id) {
+      $.ajax({
+        url: "/start-car",
+        method: "POST",
+        contentType: "application/json",
+        data: JSON.stringify({
+          id,
+        }),
+        success: null,
+        dataType: "json",
+      });
+    }
+    function stopCar(id) {
+      $.ajax({
+        url: "/stop-car",
+        method: "POST",
+        contentType: "application/json",
+        data: JSON.stringify({
+          id,
+        }),
+        success: null,
+        dataType: "json",
+      });
+    }
+  </script>
+  <body>
+    <h1>CPCU-V2X | Data Simulator Control Panel</h1>
+    <input id="inp-car-id" />
+    <button id="btn-add-car">Add Car</button>
+    {% for car in cars %}
+    <div>
+      Car ID: {{car.id}} <br />
+      Driver ID:
+      <input id="inp-driver-id_{{car.id}}" value="{{car.driver_id}}" /> <br />
+      Driver Camera ID:
+      <input id="inp-cam-driver-id_{{car.id}}" value="{{car.cam_driver_id}}" />
+      Driver Camera Active:
+      <input
+        id="inp-cam-driver-active_{{car.id}}"
+        {%if
+        car.cam_driver_active
+        %}
+        checked
+        {%endif%}
+        type="checkbox"
+      />
+      <br />
+      Door Camera ID:
+      <input id="inp-cam-door-id_{{car.id}}" value="{{car.cam_door_id}}" /> Door
+      Camera Active:
+      <input
+        id="inp-cam-door-active_{{car.id}}"
+        {%if
+        car.cam_door_active
+        %}
+        checked
+        {%endif%}
+        type="checkbox"
+      />
+      <br />
+      Front Seats Camera ID:
+      <input id="inp-cam-front-id_{{car.id}}" value="{{car.cam_front_id}}" />
+      Front Seats Camera Active:
+      <input
+        id="inp-cam-front-active_{{car.id}}"
+        {%if
+        car.cam_front_active
+        %}
+        checked
+        {%endif%}
+        type="checkbox"
+      />
+      <br />
+      Back Seats Camera ID:
+      <input id="inp-cam-back-id_{{car.id}}" value="{{car.cam_back_id}}" />
+      Back Seats Camera Active:
+      <input
+        id="inp-cam-back-active_{{car.id}}"
+        {%if
+        car.cam_back_active
+        %}
+        checked
+        {%endif%}
+        type="checkbox"
+      />
+      <br />
+      Accident Module Active:
+      <input
+        id="inp-accident-module-active_{{car.id}}"
+        {%if
+        car.accident_module_active
+        %}
+        checked
+        {%endif%}
+        type="checkbox"
+      />
+      <br />
+      Accident Probability:
+      <input
+        id="inp-accident-probability_{{car.id}}"
+        value="{{car.accident_probability}}"
+      />
+      <br />
+      Drowsiness Module Active:
+      <input
+        id="inp-drowsiness-module-active_{{car.id}}"
+        {%if
+        car.drowsiness_module_active
+        %}
+        checked
+        {%endif%}
+        type="checkbox"
+      />
+      <br />
+      Drowsiness Probability:
+      <input
+        id="inp-drowsiness-probability_{{car.id}}"
+        value="{{car.drowsiness_probability}}"
+      />
+      <br />
+      ECR Threshold:
+      <input id="inp-ecr-threshold_{{car.id}}" value="{{car.ecr_threshold}}" />
+      <br />
+      <button onclick="updateCar('{{ car.id }}')">Update Car</button> <br />
+      Car Status: {{ "Active" if car.active else "Inactive" }} <br />
+      <button onclick="startCar('{{ car.id }}')">Start Car</button>
+      <button onclick="stopCar('{{ car.id }}')">Stop Car</button> <br />
+      <!-- Response Time: <input /><button>Send Drowsiness Alarm Event</button>
+      <br />
+      <button>Send Accident Event</button> <br /> -->
+      <button onclick="deleteCar('{{ car.id }}')">Delete Car</button>
+    </div>
+    <br />
+    {% endfor %}
+  </body>
+</html>
