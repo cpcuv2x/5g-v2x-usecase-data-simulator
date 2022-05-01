@@ -103,8 +103,8 @@ class Car:
         # additional
         self.kafka_enable = True
         self.kafka_broker_url = "localhost:9092"
-        self.kafka_web_service_topic = "cpcuv2x-json-events"
-        self.kafka_telegraf_topic = "cpcuv2x-line-protocol-events"
+        self.kafka_web_service_topic = "cpcuv2x-events-web-service"
+        self.kafka_telegraf_topic = "cpcuv2x-events-telegraf"
         self.location_interval = 1
         self.location_offset = 0
         self.passenger_interval = 60
