@@ -153,80 +153,80 @@ class Car:
             else:
                 random_ecr = round(random.uniform(
                     0, self.ecr_threshold-0.001), 3)
-                # simulate accident
-                if random_accident_chance <= self.accident_probability:
-                    accident_data = {'type': 'event', 'kind': 'accident', 'car_id': self.id,
-                                     'driver_id': self.driver_id, 'lat': cur_lat, 'lng': cur_lng, 'time': cur_unix_time}
-                    print(accident_data)
-                    if self.kafka_enable:
-                        # line_protocol_producer.send(self.kafka_telegraf_topic, accident_data)
-                        kafka_producer.send(
-                            self.kafka_web_service_topic, accident_data)
-                # simulate drowsiness
-                if self.counter == self.drowsiness_counter:
-                    self.drowsiness_counter = -1
-                    drowsiness_data = {'type': 'event', 'kind': 'drowsiness_alarm', 'car_id': self.id, 'driver_id': self.driver_id,
-                                       'response_time': response_time, 'lat': cur_lat, 'lng': cur_lng, 'time': cur_unix_time}
-                    print(drowsiness_data)
-                    if self.kafka_enable:
-                        # line_protocol_producer.send(self.kafka_telegraf_topic, drowsiness_data)
-                        kafka_producer.send(
-                            self.kafka_web_service_topic, drowsiness_data)
-                # heartbeat
-                if self.counter % self.heartbeat_interval == 0:
-                    cam_driver_status_data = {
-                        'camera_id': self.cam_driver_id, 'status': 'active' if self.cam_driver_active else 'inactive'}
-                    cam_door_status_data = {
-                        'camera_id': self.cam_door_id, 'status': 'active' if self.cam_door_active else 'inactive'}
-                    cam_front_status_data = {
-                        'camera_id': self.cam_front_id, 'status': 'active' if self.cam_front_active else 'inactive'}
-                    cam_back_status_data = {
-                        'camera_id': self.cam_back_id, 'status': 'active' if self.cam_back_active else 'inactive'}
-                    drowsiness_heatbeat_data = {
-                        'status': 'active' if self.drowsiness_module_active else 'inactive'}
-                    accident_heatbeat_data = {
-                        'status': 'active' if self.accident_module_active else 'inactive'}
-                    device_status = {'cam_driver': cam_driver_status_data, 'cam_door': cam_door_status_data, 'cam_front': cam_front_status_data,
-                                     'cam_back': cam_back_status_data, 'drowsiness_module': drowsiness_heatbeat_data, 'accident_module': accident_heatbeat_data}
-                    heartbeat_data = {'type': 'heartbeat', 'kind': 'car', 'car_id': self.id, 'driver_id': self.driver_id,
-                                      'time': cur_unix_time, 'lat': cur_lat, 'lng': cur_lng, 'device_status': device_status}
-                    print(heartbeat_data)
-                    if self.kafka_enable:
-                        kafka_producer.send(
-                            self.kafka_web_service_topic, heartbeat_data)
-                # location
-                if self.counter % self.location_interval == 0:
-                    location_data = {'type': 'metric', 'kind': 'car_location',
-                                     'car_id': self.id, 'lat': cur_lat, 'lng': cur_lng, 'time': cur_unix_time}
-                    print(location_data)
-                    if self.kafka_enable:
-                        kafka_producer.send(
-                            self.kafka_web_service_topic, location_data)
-                # passenger
-                if self.counter % self.passenger_interval == 0:
-                    passenger_data = {'type': 'metric', 'kind': 'car_passenger', 'car_id': self.id,
-                                      'passenger': random_passenger, 'lat': cur_lat, 'lng': cur_lng, 'time': cur_unix_time}
-                    print(passenger_data)
-                    if self.kafka_enable:
-                        kafka_producer.send(
-                            self.kafka_telegraf_topic, passenger_data)
-                        kafka_producer.send(
-                            self.kafka_web_service_topic, passenger_data)
-                # ecr
-                if self.counter % self.ecr_interval == 0:
-                    ecr_data = {'type': 'metric', 'kind': 'driver_ecr', 'car_id': self.id, 'ecr': random_ecr, 'ecr_threshold': self.ecr_threshold,
-                                'driver_id': self.driver_id, 'lat': cur_lat, 'lng': cur_lng, 'time': cur_unix_time}
-                    print(ecr_data)
-                    if self.kafka_enable:
-                        kafka_producer.send(
-                            self.kafka_telegraf_topic, ecr_data)
-                        kafka_producer.send(
-                            self.kafka_web_service_topic, ecr_data)
-                self.i = (self.i+1) % len(location)
-                self.counter += 1
-                self.cur_date_time = self.cur_date_time + \
-                    datetime.timedelta(seconds=1)
-                time.sleep(1)
+            # simulate accident
+            if random_accident_chance <= self.accident_probability:
+                accident_data = {'type': 'event', 'kind': 'accident', 'car_id': self.id,
+                                 'driver_id': self.driver_id, 'lat': cur_lat, 'lng': cur_lng, 'time': cur_unix_time}
+                print(accident_data)
+                if self.kafka_enable:
+                    # line_protocol_producer.send(self.kafka_telegraf_topic, accident_data)
+                    kafka_producer.send(
+                        self.kafka_web_service_topic, accident_data)
+            # simulate drowsiness
+            if self.counter == self.drowsiness_counter:
+                self.drowsiness_counter = -1
+                drowsiness_data = {'type': 'event', 'kind': 'drowsiness_alarm', 'car_id': self.id, 'driver_id': self.driver_id,
+                                   'response_time': response_time, 'lat': cur_lat, 'lng': cur_lng, 'time': cur_unix_time}
+                print(drowsiness_data)
+                if self.kafka_enable:
+                    # line_protocol_producer.send(self.kafka_telegraf_topic, drowsiness_data)
+                    kafka_producer.send(
+                        self.kafka_web_service_topic, drowsiness_data)
+            # heartbeat
+            if self.counter % self.heartbeat_interval == 0:
+                cam_driver_status_data = {
+                    'camera_id': self.cam_driver_id, 'status': 'active' if self.cam_driver_active else 'inactive'}
+                cam_door_status_data = {
+                    'camera_id': self.cam_door_id, 'status': 'active' if self.cam_door_active else 'inactive'}
+                cam_front_status_data = {
+                    'camera_id': self.cam_front_id, 'status': 'active' if self.cam_front_active else 'inactive'}
+                cam_back_status_data = {
+                    'camera_id': self.cam_back_id, 'status': 'active' if self.cam_back_active else 'inactive'}
+                drowsiness_heatbeat_data = {
+                    'status': 'active' if self.drowsiness_module_active else 'inactive'}
+                accident_heatbeat_data = {
+                    'status': 'active' if self.accident_module_active else 'inactive'}
+                device_status = {'cam_driver': cam_driver_status_data, 'cam_door': cam_door_status_data, 'cam_front': cam_front_status_data,
+                                 'cam_back': cam_back_status_data, 'drowsiness_module': drowsiness_heatbeat_data, 'accident_module': accident_heatbeat_data}
+                heartbeat_data = {'type': 'heartbeat', 'kind': 'car', 'car_id': self.id, 'driver_id': self.driver_id,
+                                  'time': cur_unix_time, 'lat': cur_lat, 'lng': cur_lng, 'device_status': device_status}
+                print(heartbeat_data)
+                if self.kafka_enable:
+                    kafka_producer.send(
+                        self.kafka_web_service_topic, heartbeat_data)
+            # location
+            if self.counter % self.location_interval == 0:
+                location_data = {'type': 'metric', 'kind': 'car_location',
+                                 'car_id': self.id, 'lat': cur_lat, 'lng': cur_lng, 'time': cur_unix_time}
+                print(location_data)
+                if self.kafka_enable:
+                    kafka_producer.send(
+                        self.kafka_web_service_topic, location_data)
+            # passenger
+            if self.counter % self.passenger_interval == 0:
+                passenger_data = {'type': 'metric', 'kind': 'car_passenger', 'car_id': self.id,
+                                  'passenger': random_passenger, 'lat': cur_lat, 'lng': cur_lng, 'time': cur_unix_time}
+                print(passenger_data)
+                if self.kafka_enable:
+                    kafka_producer.send(
+                        self.kafka_telegraf_topic, passenger_data)
+                    kafka_producer.send(
+                        self.kafka_web_service_topic, passenger_data)
+            # ecr
+            if self.counter % self.ecr_interval == 0:
+                ecr_data = {'type': 'metric', 'kind': 'driver_ecr', 'car_id': self.id, 'ecr': random_ecr, 'ecr_threshold': self.ecr_threshold,
+                            'driver_id': self.driver_id, 'lat': cur_lat, 'lng': cur_lng, 'time': cur_unix_time}
+                print(ecr_data)
+                if self.kafka_enable:
+                    kafka_producer.send(
+                        self.kafka_telegraf_topic, ecr_data)
+                    kafka_producer.send(
+                        self.kafka_web_service_topic, ecr_data)
+            self.i = (self.i+1) % len(location)
+            self.counter += 1
+            self.cur_date_time = self.cur_date_time + \
+                datetime.timedelta(seconds=1)
+            time.sleep(1)
 
     def start(self):
         if not self.active:
