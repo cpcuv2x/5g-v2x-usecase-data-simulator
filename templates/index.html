@@ -47,6 +47,15 @@
           $(`#inp-drowsiness-probability_${id}`).val()
         ),
         ecrThreshold: parseFloat($(`#inp-ecr-threshold_${id}`).val()),
+        kafkaEnable: $(`#inp-kafka-enable_${id}`).is(":checked"),
+        kafkaBrokerUrl: $(`#inp-kafka-broker-url_${id}`).val(),
+        kafkaWebServiceTopic: $(`#inp-kafka-web-service-topic_${id}`).val(),
+        kafkaTelegrafTopic: $(`#inp-kafka-telegraf-topic_${id}`).val(),
+        locationOffset: parseInt($(`#inp-location-offset_${id}`).val()),
+        locationInterval: parseInt($(`#inp-location-interval_${id}`).val()),
+        passengerInterval: parseInt($(`#inp-passenger-interval_${id}`).val()),
+        ecrInterval: parseInt($(`#inp-ecr-interval_${id}`).val()),
+        heartbeatInterval: parseInt($(`#inp-heartbeat-interval_${id}`).val()),
       };
       console.log(payload);
       $.ajax({
@@ -85,6 +94,18 @@
     function stopCar(id) {
       $.ajax({
         url: "/stop-car",
+        method: "POST",
+        contentType: "application/json",
+        data: JSON.stringify({
+          id,
+        }),
+        success: null,
+        dataType: "json",
+      });
+    }
+    function resetCar(id) {
+      $.ajax({
+        url: "/reset-car",
         method: "POST",
         contentType: "application/json",
         data: JSON.stringify({
@@ -193,10 +214,70 @@
       ECR Threshold:
       <input id="inp-ecr-threshold_{{car.id}}" value="{{car.ecr_threshold}}" />
       <br />
+      Kafka Enable:
+      <input
+        id="inp-kafka-enable_{{car.id}}"
+        {%if
+        car.kafka_enable
+        %}
+        checked
+        {%endif%}
+        type="checkbox"
+      />
+      Kafka Broker URL:
+      <input
+        id="inp-kafka-broker-url_{{car.id}}"
+        value="{{car.kafka_broker_url}}"
+      />
+      <br />
+      Kafka Web Service Topic:
+      <input
+        id="inp-kafka-web-service-topic_{{car.id}}"
+        value="{{car.kafka_web_service_topic}}"
+      />
+      <br />
+      Kafka Telegraf Topic:
+      <input
+        id="inp-kafka-telegraf-topic_{{car.id}}"
+        value="{{car.kafka_telegraf_topic}}"
+      />
+      <br />
+      Location Offset (0-{{lenLocationOffset-1}}):
+      <input
+        id="inp-location-offset_{{car.id}}"
+        value="{{car.location_offset}}"
+      />
+      <br />
+      Location Interval:
+      <input
+        id="inp-location-interval_{{car.id}}"
+        value="{{car.location_interval}}"
+      />
+      <br />
+      Passenger Interval:
+      <input
+        id="inp-passenger-interval_{{car.id}}"
+        value="{{car.passenger_interval}}"
+      />
+      <br />
+      ECR Interval:
+      <input id="inp-ecr-interval_{{car.id}}" value="{{car.ecr_interval}}" />
+      <br />
+      Heartbeat Interval:
+      <input
+        id="inp-heartbeat-interval_{{car.id}}"
+        value="{{car.heartbeat_interval}}"
+      />
+      <br />
       <button onclick="updateCar('{{ car.id }}')">Update Car</button> <br />
       Car Status: {{ "Active" if car.active else "Inactive" }} <br />
+      Car Date Time: {{ car.cur_date_time }} <br />
+      Car Location Index: {{ car.i }} <br />
+      Car Counter: {{ car.counter }} <br />
+      Car Drowsiness Counter: {{ car.drowsiness_counter }} <br />
       <button onclick="startCar('{{ car.id }}')">Start Car</button>
-      <button onclick="stopCar('{{ car.id }}')">Stop Car</button> <br />
+      <button onclick="stopCar('{{ car.id }}')">Stop Car</button>
+      <button onclick="resetCar('{{ car.id }}')">Reset Car</button> <br />
       <!-- Response Time: <input /><button>Send Drowsiness Alarm Event</button>
       <br />
       <button>Send Accident Event</button> <br /> -->

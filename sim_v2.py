@@ -38,6 +38,16 @@ class UpdateCarBody(BaseModel):
     drowsinessModuleActive: bool
     drowsinessProbability: float
     ecrThreshold: float
+    # additional
+    kafkaEnable: bool
+    kafkaBrokerUrl: str
+    kafkaWebServiceTopic: str
+    kafkaTelegrafTopic: str
+    locationOffset: int
+    locationInterval: int
+    passengerInterval: int
+    ecrInterval: int
+    heartbeatInterval: int
 
 
 class DeleteCarBody(BaseModel):
@@ -49,6 +59,10 @@ class StartCarBody(BaseModel):
 
 
 class StopCarBody(BaseModel):
+    id: str
+
+
+class ResetCarBody(BaseModel):
     id: str
 
 
@@ -72,6 +86,8 @@ class Car:
     # additional
     kafka_enable: bool
     kafka_broker_url: bool
+    kafka_web_service_topic: str
+    kafka_telegraf_topic: str
     location_offset: int
     location_interval: int
     passenger_interval: int
@@ -131,10 +147,22 @@ class Car:
         self.drowsiness_module_active = payload.drowsinessModuleActive
         self.drowsiness_probability = payload.drowsinessProbability
         self.ecr_threshold = payload.ecrThreshold
+        # additional
+        self.kafka_enable = payload.kafkaEnable
+        self.kafka_broker_url = payload.kafkaBrokerUrl
+        self.kafka_web_service_topic = payload.kafkaWebServiceTopic
+        self.kafka_telegraf_topic = payload.kafkaTelegrafTopic
+        self.location_interval = payload.locationInterval
+        self.location_offset = payload.locationOffset
+        self.passenger_interval = payload.passengerInterval
+        self.ecr_interval = payload.ecrInterval
+        self.heartbeat_interval = payload.heartbeatInterval
 
     def task(self):
-        kafka_producer = KafkaProducer(
-            bootstrap_servers=self.kafka_broker_url, value_serializer=lambda m: json.dumps(m).encode('ascii'))
+        kafka_producer = None
+        if self.kafka_enable:
+            kafka_producer = KafkaProducer(
+                bootstrap_servers=self.kafka_broker_url, value_serializer=lambda m: json.dumps(m).encode('ascii'))
 
         while self.active:
             cur_unix_time = int(calendar.timegm(
@@ -238,6 +266,12 @@ class Car:
     def stop(self):
         self.active = False
 
+    def reset(self):
+        self.cur_date_time = datetime.datetime(2022, 1, 1, 9, 0, 0, 0)
+        self.i = self.location_offset
+        self.counter = 0
+        self.drowsiness_counter = -1
+
 
 class Simulator:
     cars: Dict[str, Car]
@@ -262,6 +296,9 @@ class Simulator:
     def stop_car(self, payload: StopCarBody):
         self.cars.get(payload.id).stop()
 
+    def reset_car(self, payload: ResetCarBody):
+        self.cars.get(payload.id).reset()
+
 
 class FastAPIApp(FastAPI):
     sim: Simulator
@@ -278,7 +315,7 @@ class FastAPIApp(FastAPI):
 
         @self.get("/", response_class=HTMLResponse)
         async def get_page(request: Request):
-            return self.templates.TemplateResponse("index.html", {"request": request, "cars": self.sim.cars.values()})
+            return self.templates.TemplateResponse("index.html", {"request": request, "cars": self.sim.cars.values(), "lenLocationOffset": len(location)})
 
         @self.post("/add-car")
         async def add_car(body: AddCarBody):
@@ -293,12 +330,16 @@ class FastAPIApp(FastAPI):
             self.sim.delete_car(body)
 
         @self.post("/start-car")
-        async def start_car(body: AddCarBody):
+        async def start_car(body: StartCarBody):
             self.sim.start_car(body)
 
         @self.post("/stop-car")
-        async def stop_car(body: DeleteCarBody):
+        async def stop_car(body: StopCarBody):
             self.sim.stop_car(body)
+
+        @self.post("/reset-car")
+        async def reset_car(body: ResetCarBody):
+            self.sim.reset_car(body)
 
 
 sim = Simulator()
