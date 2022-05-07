@@ -7,6 +7,7 @@ import threading
 import time
 from typing import Dict
 
+import pandas as pd
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
@@ -20,6 +21,15 @@ location = [(l.split(',')[0], l.split(',')[1]) for l in f.readlines()]
 
 class AddCarBody(BaseModel):
     id: str
+
+
+class ImportCar:
+    car_id: str
+    driver_id: str
+    cam_driver_id: str
+    cam_door_id: str
+    cam_front_id: str
+    cam_back_id: str
 
 
 class UpdateCarBody(BaseModel):
@@ -283,6 +293,15 @@ class Simulator:
     def add_car(self, payload: AddCarBody):
         self.cars[payload.id] = Car(payload.id)
 
+    def import_car(self, payload: ImportCar):
+        c = Car(payload.car_id)
+        c.driver_id = payload.driver_id
+        c.cam_driver_id = payload.cam_driver_id
+        c.cam_door_id = payload.cam_door_id
+        c.cam_front_id = payload.cam_front_id
+        c.cam_back_id = payload.cam_back_id
+        self.cars[payload.car_id] = c
+
     def update_car(self, payload: UpdateCarBody):
         self.cars.get(payload.id).update(payload)
 
@@ -344,3 +363,8 @@ class FastAPIApp(FastAPI):
 
 sim = Simulator()
 app = FastAPIApp(sim)
+
+df = pd.read_csv('presets_v2.csv')
+
+for i in range(0, len(df)):
+    sim.import_car(df.iloc[i])
