@@ -269,6 +269,8 @@ class Car:
     def start(self):
         if not self.active:
             self.active = True
+            # Comment the following line if you want to fix the start datetime
+            self.cur_date_time = datetime.datetime.utcnow()
             t = threading.Thread(target=self.task)
             t.setDaemon(True)
             t.start()
