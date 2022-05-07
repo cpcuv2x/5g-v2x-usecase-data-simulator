@@ -178,19 +178,7 @@ class Car:
             cur_unix_time = int(calendar.timegm(
                 self.cur_date_time.timetuple()))
             cur_lat, cur_lng = location[self.i][0], location[self.i][1]
-            random_accident_chance, random_drowsiness_chance = random.uniform(
-                0, 1), random.uniform(0, 1)
-            random_passenger = random.randint(0, 9)
-            if random_drowsiness_chance <= self.drowsiness_probability:
-                random_ecr = round(random.uniform(
-                    self.ecr_threshold, 1), 3)
-                response_time = random.randint(0, 20)/10
-                # set counter for the sending drowsiness event after the response time has passed
-                self.drowsiness_counter = self.counter + \
-                    math.ceil(response_time)
-            else:
-                random_ecr = round(random.uniform(
-                    0, self.ecr_threshold-0.001), 3)
+            random_accident_chance = random.uniform(0, 1)
             # simulate accident
             if random_accident_chance <= self.accident_probability:
                 accident_data = {'type': 'event', 'kind': 'accident', 'car_id': self.id,
@@ -200,16 +188,6 @@ class Car:
                     # line_protocol_producer.send(self.kafka_telegraf_topic, accident_data)
                     kafka_producer.send(
                         self.kafka_web_service_topic, accident_data)
-            # simulate drowsiness
-            if self.counter == self.drowsiness_counter:
-                self.drowsiness_counter = -1
-                drowsiness_data = {'type': 'event', 'kind': 'drowsiness_alarm', 'car_id': self.id, 'driver_id': self.driver_id,
-                                   'response_time': response_time, 'lat': cur_lat, 'lng': cur_lng, 'time': cur_unix_time}
-                print(drowsiness_data)
-                if self.kafka_enable:
-                    # line_protocol_producer.send(self.kafka_telegraf_topic, drowsiness_data)
-                    kafka_producer.send(
-                        self.kafka_web_service_topic, drowsiness_data)
             # heartbeat
             if self.counter % self.heartbeat_interval == 0:
                 cam_driver_status_data = {
@@ -242,6 +220,7 @@ class Car:
                         self.kafka_web_service_topic, location_data)
             # passenger
             if self.counter % self.passenger_interval == 0:
+                random_passenger = random.randint(0, 9)
                 passenger_data = {'type': 'metric', 'kind': 'car_passenger', 'car_id': self.id,
                                   'passenger': random_passenger, 'lat': cur_lat, 'lng': cur_lng, 'time': cur_unix_time}
                 print(passenger_data)
@@ -252,6 +231,17 @@ class Car:
                         self.kafka_web_service_topic, passenger_data)
             # ecr
             if self.counter % self.ecr_interval == 0:
+                random_drowsiness_chance = random.uniform(0, 1)
+                if random_drowsiness_chance <= self.drowsiness_probability:
+                    random_ecr = round(random.uniform(
+                        self.ecr_threshold, 1), 3)
+                    response_time = random.randint(0, 20)/10
+                    # set counter for the sending drowsiness event after the response time has passed
+                    self.drowsiness_counter = self.counter + \
+                        math.ceil(response_time)
+                else:
+                    random_ecr = round(random.uniform(
+                        0, self.ecr_threshold-0.001), 3)
                 ecr_data = {'type': 'metric', 'kind': 'driver_ecr', 'car_id': self.id, 'ecr': random_ecr, 'ecr_threshold': self.ecr_threshold,
                             'driver_id': self.driver_id, 'lat': cur_lat, 'lng': cur_lng, 'time': cur_unix_time}
                 print(ecr_data)
@@ -260,6 +250,16 @@ class Car:
                         self.kafka_telegraf_topic, ecr_data)
                     kafka_producer.send(
                         self.kafka_web_service_topic, ecr_data)
+            # simulate drowsiness
+            if self.counter == self.drowsiness_counter:
+                self.drowsiness_counter = -1
+                drowsiness_data = {'type': 'event', 'kind': 'drowsiness_alarm', 'car_id': self.id, 'driver_id': self.driver_id,
+                                   'response_time': response_time, 'lat': cur_lat, 'lng': cur_lng, 'time': cur_unix_time}
+                print(drowsiness_data)
+                if self.kafka_enable:
+                    # line_protocol_producer.send(self.kafka_telegraf_topic, drowsiness_data)
+                    kafka_producer.send(
+                        self.kafka_web_service_topic, drowsiness_data)
             self.i = (self.i+1) % len(location)
             self.counter += 1
             self.cur_date_time = self.cur_date_time + \
