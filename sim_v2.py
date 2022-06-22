@@ -18,6 +18,10 @@ from pydantic import BaseModel
 f = open('location/chula_route.txt', 'r')
 location = [(l.split(',')[0], l.split(',')[1]) for l in f.readlines()]
 
+class Status : 
+    ACTIVE = "ACTIVE"
+    INACTIVE = "INACTIVE"
+
 
 class AddCarBody(BaseModel):
     id: str
@@ -191,17 +195,17 @@ class Car:
             # heartbeat
             if self.counter % self.heartbeat_interval == 0:
                 cam_driver_status_data = {
-                    'camera_id': self.cam_driver_id, 'status': 'active' if self.cam_driver_active else 'inactive'}
+                    'camera_id': self.cam_driver_id, 'status': Status.ACTIVE if self.cam_driver_active else Status.INACTIVE}
                 cam_door_status_data = {
-                    'camera_id': self.cam_door_id, 'status': 'active' if self.cam_door_active else 'inactive'}
+                    'camera_id': self.cam_door_id, 'status': Status.ACTIVE if self.cam_door_active else Status.INACTIVE}
                 cam_front_status_data = {
-                    'camera_id': self.cam_front_id, 'status': 'active' if self.cam_front_active else 'inactive'}
+                    'camera_id': self.cam_front_id, 'status': Status.ACTIVE if self.cam_front_active else Status.INACTIVE}
                 cam_back_status_data = {
-                    'camera_id': self.cam_back_id, 'status': 'active' if self.cam_back_active else 'inactive'}
+                    'camera_id': self.cam_back_id, 'status': Status.ACTIVE if self.cam_back_active else Status.INACTIVE}
                 drowsiness_heatbeat_data = {
-                    'status': 'active' if self.drowsiness_module_active else 'inactive'}
+                    'status': Status.ACTIVE if random.uniform(0, 1)<0.5 else Status.INACTIVE}
                 accident_heatbeat_data = {
-                    'status': 'active' if self.accident_module_active else 'inactive'}
+                    'status': Status.ACTIVE if random.uniform(0, 1)<0.5 else Status.INACTIVE}
                 device_status = {'cam_driver': cam_driver_status_data, 'cam_door': cam_door_status_data, 'cam_front': cam_front_status_data,
                                  'cam_back': cam_back_status_data, 'drowsiness_module': drowsiness_heatbeat_data, 'accident_module': accident_heatbeat_data}
                 heartbeat_data = {'type': 'heartbeat', 'kind': 'car', 'car_id': self.id, 'driver_id': self.driver_id,

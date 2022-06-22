@@ -24,7 +24,6 @@ starlette==0.17.1
 toml==0.10.2
 typing_extensions==4.2.0
 uvicorn==0.17.6
-uvloop==0.16.0
 watchgod==0.8.2
 websockets==10.3
 youtube-dl==2021.12.17
