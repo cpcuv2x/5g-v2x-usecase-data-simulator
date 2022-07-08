@@ -138,7 +138,7 @@ class Car:
         self.location_interval = 1
         self.location_offset = 0
         self.passenger_interval = 60
-        self.ecr_interval = 30
+        self.ecr_interval = 60
         self.heartbeat_interval = 60
         # variant
         self.cur_date_time = datetime.datetime(2022, 1, 1, 9, 0, 0, 0)
@@ -179,8 +179,8 @@ class Car:
                 bootstrap_servers=self.kafka_broker_url, value_serializer=lambda m: json.dumps(m).encode('ascii'))
 
         while self.active:
-            cur_unix_time = int(calendar.timegm(
-                self.cur_date_time.timetuple()))
+            self.cur_date_time = datetime.datetime.utcnow()
+            cur_unix_time = int( calendar.timegm( self.cur_date_time.timetuple() ) )
             cur_lat, cur_lng = location[self.i][0], location[self.i][1]
             random_accident_chance = random.uniform(0, 1)
             # simulate accident
