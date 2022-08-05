@@ -1,0 +1,3 @@
+car_id,driver_id,cam_driver_id,cam_door_id,cam_front_id,cam_back_id
+V0001,D0017,C0003,C0004,C0001,C0002
+V0002,D0019,C0005,C0006,C0007,C0008
