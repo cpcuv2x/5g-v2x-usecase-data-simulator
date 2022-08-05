@@ -2,6 +2,7 @@ import calendar
 import datetime
 import json
 import math
+from pyclbr import Function
 import random
 import threading
 import time
@@ -15,7 +16,7 @@ from fastapi.templating import Jinja2Templates
 from kafka import KafkaProducer
 from pydantic import BaseModel
 
-f = open('location/chula_route.txt', 'r')
+f = open('5g-v2x-usecase-data-simulator/location/chula_route.txt', 'r')
 location = [(l.split(',')[0], l.split(',')[1]) for l in f.readlines()]
 
 class Status : 
@@ -131,7 +132,7 @@ class Car:
         self.drowsiness_probability = 0.001
         self.ecr_threshold = 0.5
         # additional
-        self.kafka_enable = True
+        self.kafka_enable = False
         self.kafka_broker_url = "localhost:9092"
         self.kafka_web_service_topic = "cpcuv2x-events-web-service"
         self.kafka_telegraf_topic = "cpcuv2x-events-telegraf"
@@ -172,7 +173,7 @@ class Car:
         self.ecr_interval = payload.ecrInterval
         self.heartbeat_interval = payload.heartbeatInterval
 
-    def task(self):
+    def task(self, func):
         kafka_producer = None
         if self.kafka_enable:
             kafka_producer = KafkaProducer(
@@ -218,7 +219,8 @@ class Car:
             if self.counter % self.location_interval == 0:
                 location_data = {'type': 'metric', 'kind': 'car_location',
                                  'car_id': self.id, 'lat': cur_lat, 'lng': cur_lng, 'time': cur_unix_time}
-                print(location_data)
+                # print(location_data)
+                func(cur_lat, cur_lng)
                 if self.kafka_enable:
                     kafka_producer.send(
                         self.kafka_web_service_topic, location_data)
@@ -270,12 +272,12 @@ class Car:
                 datetime.timedelta(seconds=1)
             time.sleep(1)
 
-    def start(self):
+    def start(self, func):
         if not self.active:
             self.active = True
             # Comment the following line if you want to fix the start datetime
             self.cur_date_time = datetime.datetime.utcnow()
-            t = threading.Thread(target=self.task)
+            t = threading.Thread(target=self.task, args=[func])
             t.setDaemon(True)
             t.start()
 
@@ -315,8 +317,8 @@ class Simulator:
         self.cars.get(payload.id).stop()
         self.cars.pop(payload.id)
 
-    def start_car(self, payload: StartCarBody):
-        self.cars.get(payload.id).start()
+    def start_car(self, payload: StartCarBody, func: Function):
+        self.cars.get(payload.id).start(func)
 
     def stop_car(self, payload: StopCarBody):
         self.cars.get(payload.id).stop()
@@ -334,7 +336,7 @@ class FastAPIApp(FastAPI):
         self.sim = sim
 
         self.mount(
-            "/static", StaticFiles(directory="static"), name="static")
+            "/static", StaticFiles(directory="5g-v2x-usecase-data-simulator/static"), name="static")
 
         self.templates = Jinja2Templates(directory="templates")
 
@@ -367,10 +369,15 @@ class FastAPIApp(FastAPI):
             self.sim.reset_car(body)
 
 
-sim = Simulator()
-app = FastAPIApp(sim)
 
-df = pd.read_csv('presets_v2.csv')
+def main():
+    sim = Simulator()
+    app = FastAPIApp(sim)
 
-for i in range(0, len(df)):
-    sim.import_car(df.iloc[i])
+    df = pd.read_csv('5g-v2x-usecase-data-simulator/presets_v2.csv')
+
+    for i in range(0, len(df)):
+        sim.import_car(df.iloc[i])
+ 
+if __name__ == '__main__':
+    main()
