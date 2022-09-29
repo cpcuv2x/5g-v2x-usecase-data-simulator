@@ -181,7 +181,7 @@ class Car:
         while self.active:
             self.cur_date_time = datetime.datetime.utcnow()
             cur_unix_time = int( calendar.timegm( self.cur_date_time.timetuple() ) )
-            cur_lat, cur_lng = location[self.i][0], location[self.i][1]
+            cur_lng, cur_lat = location[self.i][0], location[self.i][1]
             random_accident_chance = random.uniform(0, 1)
             # simulate accident
             if random_accident_chance <= self.accident_probability:
